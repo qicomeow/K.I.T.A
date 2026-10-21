@@ -31,7 +31,7 @@ class AuthController extends Controller
         Auth::login($user);
 
         return redirect()->route('home')
-            ->with('success', 'Pendaftaran berjaya!');
+            ->with('success', 'Signup Successfully!');
     }
 
     public function showLogin()
