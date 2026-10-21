@@ -50,7 +50,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return redirect()->route('home')
-                ->with('success', 'Login Successfully!');
+                ->with('success', 'Login!');
         }
 
         return back()->withErrors([
