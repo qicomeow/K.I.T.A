@@ -100,7 +100,7 @@ class CommunityItemController extends Controller
 
         return redirect()
             ->route('community.index')
-            ->with('success', 'Barang berjaya ditambah!');
+            ->with('success', 'Item successfully being added!');
     }
 
     /**
@@ -198,12 +198,12 @@ class CommunityItemController extends Controller
                     'item' => $item->id,
                     'from' => 'my-items',
                 ])
-                ->with('success', 'Barang berjaya dikemaskini!');
+                ->with('success', 'Item succesfully being updated!');
         }
 
         return redirect()
             ->route('community.show', $item)
-            ->with('success', 'Barang berjaya dikemaskini!');
+            ->with('success', 'Item succesfully being updated!');
     }
 
     /**
@@ -226,6 +226,6 @@ class CommunityItemController extends Controller
 
         return redirect()
             ->route('community.my-items')
-            ->with('success', 'Barang berjaya dipadam!');
+            ->with('success', 'Item succesfully deleted!');
     }
 }
