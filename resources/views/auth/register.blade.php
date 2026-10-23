@@ -742,20 +742,29 @@
 
                 <!-- FULL NAME -->
                 <div class="group">
-                    <label for="name">Full Name</label>
-
+                    <label for="full_name">Full Name</label>
                     <div class="input-wrapper">
-                        <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value="{{ old('name') }}"
+                        <input type="text" id="full_name" name="full_name"
+                            value="{{ old('full_name') }}"
                             placeholder="Enter your full name"
-                            autocomplete="name"
-                            required
-                        >
+                            autocomplete="name" maxlength="255" required>
                         <span class="input-icon">♙</span>
                     </div>
+                </div>
+
+                <!-- SHORT NAME -->
+                <div class="group">
+                    <label for="name">Short Name (2 words)</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="name" name="name"
+                            value="{{ old('name') }}"
+                            placeholder="e.g. Izzati Aqilah"
+                            maxlength="255" required
+                            pattern="[^\s]+\s+[^\s]+"
+                            title="Please enter exactly two words">
+                        <span class="input-icon">♙</span>
+                    </div>
+                    <small class="password-hint">This name will appear on your profile.</small>
                 </div>
 
                 <!-- EMAIL -->

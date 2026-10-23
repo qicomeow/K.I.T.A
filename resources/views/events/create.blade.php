@@ -1347,7 +1347,7 @@ header{background:rgba(255,255,255,.92);position:sticky;top:0;z-index:50;backdro
                 </div>
             </div>
             <div class="event-actions">
-                <a href="{{ route('events.mine') }}" button type="submit" class="event-btn event-btn-primary">Publish Event 🌱</button>
+                <button type="submit" class="event-btn event-btn-primary">Publish Event 🌱</button>
                 <a href="{{ route('events.mine') }}" class="event-btn event-btn-light">Cancel</a>
             </div>
         </form>
