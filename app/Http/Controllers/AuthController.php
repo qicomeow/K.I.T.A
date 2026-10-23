@@ -31,7 +31,7 @@ class AuthController extends Controller
         Auth::login($user);
 
         return redirect()->route('home')
-            ->with('success', 'Pendaftaran berjaya!');
+            ->with('success', 'Register Succesful!');
     }
 
     public function showLogin()
@@ -50,11 +50,11 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return redirect()->route('home')
-                ->with('success', 'Login berjaya!');
+                ->with('success', 'Login succesful!');
         }
 
         return back()->withErrors([
-            'email' => 'E-mel atau password tidak betul.',
+            'email' => 'Wrong email or password.',
         ])->onlyInput('email');
     }
 

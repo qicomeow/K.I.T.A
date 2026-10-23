@@ -3,8 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neighbourhood — Your Community Hub</title>
+    <title>K.I.T.A. — Your Community Hub</title>
+    <script>
+        // Papar intro sekali sahaja untuk setiap sesi tab browser.
+        try {
+            if (!sessionStorage.getItem('neighbour_intro_seen') &&
+                !sessionStorage.getItem('neighbour_intro_loading')) {
+                sessionStorage.setItem('neighbour_intro_loading', '1');
+                window.location.replace(@json(route('intro')));
+            }
+        } catch (e) { /* Browser blocks storage: show homepage normally */ }
+    </script>
 
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --green: #47785b;
@@ -673,6 +687,14 @@
 
         .links-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 22px; }
 
+        
+        /* Admin updates on homepage issue cards */
+        .issue-admin-update { margin-top:12px; padding:12px 14px; background:#edf5ee; border-left:3px solid #6b9877; border-radius:10px; min-width:0; }
+        .issue-admin-update strong { display:block; color:#365b43; font-size:12px; margin-bottom:5px; }
+        .issue-admin-update p { color:#405449; font-size:12px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+        .issue-admin-update small { display:block; margin-top:7px; color:#73877a; font-size:11px; }
+        @media(max-width:1000px) { .issue-card > div:last-child { min-width:0; flex:1; } }
+
         /* ---------- Issues board ---------- */
         .issue-board {
             display: grid;
@@ -846,7 +868,22 @@
 
         /* ---------- Bottom nav (mobile only) ---------- */
         .bottom-nav { display: none; }
+   
+        /* Profile picture for header and sidebar */
+        .avatar-sm,
+        .avatar-lg {
+            overflow: hidden;
+            flex-shrink: 0;
+        }
 
+        .profile-avatar-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
         /* ---------- Responsive ---------- */
         @media (max-width: 1000px) {
             .events-layout { grid-template-columns: 1fr; }
@@ -926,19 +963,153 @@
             * { transition: none !important; }
             html { scroll-behavior: auto; }
         }
+
+        /* Settings modal */
+        .settings-backdrop { position:fixed; inset:0; z-index:150; background:rgba(22,42,29,.58); display:none; align-items:center; justify-content:center; padding:16px; }
+        .settings-backdrop.is-open { display:flex; }
+        .settings-modal { background:#fff; width:min(620px,100%); max-height:min(92vh,850px); overflow-y:auto; border-radius:24px; box-shadow:0 24px 75px rgba(0,0,0,.22); padding:24px; }
+        .settings-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+        .settings-heading h2 { color:var(--dark-green); font-size:23px; }
+        .settings-x { border:0; border-radius:50%; background:var(--sage); width:36px; height:36px; }
+        .settings-photo { display:flex; gap:16px; align-items:center; margin-bottom:18px; }
+        .settings-photo-preview { width:84px; height:84px; border-radius:50%; object-fit:cover; background:var(--sage); display:grid; place-items:center; font-size:32px; flex-shrink:0; }
+        .settings-photo input { max-width:100%; font-size:12px; }
+        .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+        .settings-field { display:grid; gap:5px; min-width:0; }
+        .settings-field.full { grid-column:1/-1; }
+        .settings-field label { font-weight:650; font-size:13px; }
+        .settings-field input,.settings-field textarea { width:100%; border:1px solid var(--border); border-radius:12px; padding:11px 12px; font:inherit; font-size:14px; background:#fcfdfb; color:var(--text); }
+        .settings-field textarea { min-height:75px; resize:vertical; }
+        .settings-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:18px; }
+        .settings-danger { border-top:1px solid var(--border); margin-top:22px; padding-top:17px; display:flex; justify-content:space-between; gap:12px; align-items:center; }
+        .settings-danger p { color:var(--muted); font-size:12px; }
+        .settings-delete { color:#a12d2d; background:#fff0f0; border:1px solid #f2c9c9; border-radius:12px; padding:10px 12px; font-weight:700; }
+        .settings-errors { padding:12px; background:#fff0f0; color:#922; border-radius:12px; margin-bottom:15px; }
+        body.settings-open { overflow:hidden; }
+        @media(max-width:520px) { .settings-grid { grid-template-columns:1fr; } .settings-modal { padding:18px; } .settings-danger { align-items:flex-start; flex-direction:column; } }
+
+        /* Profile photo cropping popup */
+        .crop-backdrop { position:fixed; inset:0; z-index:220; background:rgba(20,36,25,.78); display:none; align-items:center; justify-content:center; padding:16px; }
+        .crop-backdrop.is-open { display:flex; }
+        .crop-dialog { width:min(440px,100%); background:#fff; padding:22px; border-radius:22px; color:var(--dark-green); box-shadow:0 24px 70px rgba(0,0,0,.25); }
+        .crop-dialog h3 { margin-bottom:4px; }
+        .crop-dialog p { font-size:13px; color:var(--muted); margin-bottom:14px; }
+        .crop-stage { width:min(320px,100%); aspect-ratio:1; margin:auto; overflow:hidden; border-radius:50%; background:#e5ecdc; position:relative; cursor:grab; touch-action:none; user-select:none; }
+        .crop-stage:active { cursor:grabbing; }
+        .crop-stage img { position:absolute; left:50%; top:50%; max-width:none; max-height:none; pointer-events:none; transform-origin:center center; }
+        .crop-zoom { display:flex; align-items:center; gap:12px; margin:20px 0 12px; font-size:13px; }
+        .crop-zoom input { flex:1; accent-color:var(--green); min-width:0; }
+        .crop-actions { display:flex; justify-content:flex-end; gap:10px; }
+        .settings-photo-preview { overflow:hidden; }
+
+        /* K.I.T.A. brand: full original logo + colorful Fredoka lettering */
+        .brand { display:flex; align-items:center; gap:11px; text-decoration:none; flex-shrink:0; }
+        .brand-icon { width:52px; height:52px; display:flex; align-items:center; justify-content:center; background:#fff; border-radius:15px; overflow:hidden; flex-shrink:0; box-shadow:0 5px 18px rgba(0,0,0,.07); }
+        .brand-icon img { display:block; width:100%; height:100%; object-fit:contain; border-radius:inherit; }
+        .brand-text { display:inline-flex; align-items:baseline; gap:1px; font-family:'Fredoka','Segoe UI',sans-serif; font-size:27px; font-weight:700; letter-spacing:-1.2px; line-height:1; white-space:nowrap; }
+        .brand-text span { display:inline-block; }
+        .brand-text .k { color:#FFE047; transform:rotate(-6deg); }
+        .brand-text .i { color:#6DE0BF; transform:rotate(4deg); }
+        .brand-text .t { color:#FF9C68; transform:rotate(-5deg); }
+        .brand-text .a { color:#4CC9DF; transform:rotate(5deg); }
+        @media(max-width:700px) {
+            .brand { gap:7px; }
+            .brand-icon { width:42px; height:42px; border-radius:12px; }
+            .brand-text { font-size:21px; }
+        }
+        @media(max-width:380px) {
+            .brand-icon { width:36px; height:36px; }
+            .brand-text { font-size:18px; }
+        }
+        
+        /* Homepage event layout */
+        #community .event-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .home-events-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .home-events-period {
+            display: inline-flex;
+            align-items: center;
+            padding: 9px 15px;
+            border-radius: 999px;
+            background: #e5ecdc;
+            color: #294d38;
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .home-events-empty {
+            grid-column: 1 / -1;
+            background: #fff;
+            border: 1px solid #e6e9df;
+            border-radius: 22px;
+            padding: 40px 22px;
+            text-align: center;
+        }
+
+        .home-events-empty > span {
+            font-size: 38px;
+        }
+
+        .home-events-empty h3 {
+            margin: 10px 0 5px;
+            color: #294d38;
+        }
+
+        .home-events-empty p {
+            font-size: 13px;
+            color: #788579;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 700px) {
+            #community .event-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .home-events-actions {
+                align-items: stretch;
+            }
+
+            .home-events-actions .btn {
+                text-align: center;
+            }
+
+            #community .event-card {
+                padding: 15px;
+                border-radius: 18px;
+            }
+        }
+
     </style>
 </head>
 
 <body>
+
+
     <header>
         <div class="container navbar">
-            <a href="{{ route('home') }}" class="brand">
-                <span class="brand-icon">🌿</span>
-                Neighbourhood
+            <a href="{{ route('home') }}" class="brand" aria-label="K.I.T.A. Home">
+                <span class="brand-icon">
+                    <img src="{{ asset('images/kita-full-logo.png') }}" alt="K.I.T.A. logo">
+                </span>
+                <span class="brand-text" aria-label="K.I.T.A.">
+                    <span class="k">K.</span><span class="i">I.</span><span class="t">T.</span><span class="a">A.</span>
+                </span>
             </a>
 
             <nav class="nav-links">
-                <a href="#community" class="nav-text-link">Community</a>
+                <a href="#community" class="nav-text-link">Events</a>
                 <a href="#issues" class="nav-text-link">Issues</a>
                 <a href="#marketplace" class="nav-text-link">Marketplace</a>
 
@@ -1040,7 +1211,19 @@
                         aria-controls="userDrawer"
                         aria-expanded="false"
                     >
-                        <span class="avatar-sm">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</span>
+
+                    <span class="avatar-sm">
+                        @if (Auth::user()->profile_photo)
+                            <img
+                                src="{{ asset('storage/' . Auth::user()->profile_photo) }}"
+                                alt="Profile Picture"
+                                class="profile-avatar-img"
+                            >
+                        @else
+                            {{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}
+                        @endif
+                    </span>
+
                         <span class="user-label">Hi, {{ Auth::user()->name }} 🌿</span>
                     </button>
                 @else
@@ -1057,9 +1240,9 @@
                 ['icon' => '🏠', 'label' => 'Home',        'href' => route('home'),         'soon' => false],
                 ['icon' => '📦', 'label' => 'My Items',    'href' => url('/my-items'),      'soon' => false],
                 ['icon' => '📅', 'label' => 'My Events',   'href' => route('events.mine'),  'soon' => false],
-                ['icon' => '📣', 'label' => 'My Complain', 'href' => url('/my-complain'),   'soon' => true],
-                ['icon' => '💬', 'label' => 'Messages',    'href' => url('/messages'),      'soon' => true],
-                ['icon' => '⚙️', 'label' => 'Settings',    'href' => url('/settings'),      'soon' => true],
+                ['icon' => '📣', 'label' => 'My Complain', 'href' => url('complaints'),   'soon' => false],
+                ['icon' => '💬', 'label' => 'Messages',    'href' => url('/messages'),      'soon' => false],
+                ['icon' => '⚙️', 'label' => 'Settings',    'href' => '#settings',          'soon' => false],
             ];
         @endphp
 
@@ -1068,8 +1251,19 @@
         <aside class="drawer" id="userDrawer" role="dialog" aria-modal="true" aria-label="My account" aria-hidden="true">
             <button type="button" class="drawer-close" id="drawerClose" aria-label="Close menu">✕</button>
 
-            <div class="drawer-profile">
-                <div class="avatar-lg">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
+            <div class="drawer-profile">   
+                <div class="avatar-lg">
+                    @if (Auth::user()->profile_photo)
+                        <img
+                            src="{{ asset('storage/' . Auth::user()->profile_photo) }}"
+                            alt="Profile Picture"
+                            class="profile-avatar-img"
+                        >
+                    @else
+                        {{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}
+                    @endif
+                </div>
+
                 <h2>Hi, {{ Auth::user()->name }}! 👋</h2>
                 <p>Good to see you again</p>
             </div>
@@ -1084,7 +1278,7 @@
                         </span>
                     @else
                         <a href="{{ $link['href'] }}"
-                           class="drawer-link {{ url()->current() === $link['href'] ? 'active' : '' }}">
+                           class="drawer-link {{ url()->current() === $link['href'] ? 'active' : '' }}" {{ $link['label'] === 'Settings' ? 'id=settingsOpen' : '' }}>
                             <span class="ic">{{ $link['icon'] }}</span>
                             {{ $link['label'] }}
                         </a>
@@ -1107,6 +1301,92 @@
         </aside>
     @endauth
 
+
+    @auth
+    <div class="settings-backdrop" id="settingsBackdrop" aria-hidden="true">
+      <section class="settings-modal" id="settingsDialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" tabindex="-1">
+        <div class="settings-heading"><h2 id="settingsTitle">⚙️ Account Settings</h2><button type="button" class="settings-x" id="settingsClose" aria-label="Close settings">✕</button></div>
+        @if ($errors->any())
+          <div class="settings-errors" role="alert"><strong>Please check:</strong><ul style="padding-left:20px">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+        @endif
+        <form id="settingsForm" action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
+          @csrf
+          @method('PUT')
+          <input type="hidden" name="_settings_form" value="1">
+          <div class="settings-photo">
+            @if (Auth::user()->profile_photo)
+              <img class="settings-photo-preview" id="settingsPreview" src="{{ asset('storage/' . Auth::user()->profile_photo) }}" alt="Profile picture">
+            @else
+              <div class="settings-photo-preview" id="settingsPreview">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
+            @endif
+            <div><strong>Profile Picture</strong><p style="font-size:12px;color:var(--muted)">JPG, PNG or WEBP · max 2MB</p><input type="file" name="profile_photo" id="settingsPhoto" accept="image/jpeg,image/png,image/webp"></div>
+          </div>
+          <div class="settings-grid">
+            <div class="settings-field full">
+                <label for="settingsName">Full Name</label>
+                <input
+                    type="text"
+                    id="settingsName"
+                    name="full_name"
+                    value="{{ old('full_name', Auth::user()->full_name) }}"
+                    maxlength="255"
+                    required
+                >
+            </div>
+            <div class="settings-field">
+                <label for="settingsShort">Short Name (2 words)</label>
+                <input
+                    type="text"
+                    id="settingsShort"
+                    name="name"
+                    value="{{ old('name', Auth::user()->name) }}"
+                    maxlength="255"
+                    required
+                >
+            </div>
+            <div class="settings-field"><label for="settingsUsername">Username</label><input id="settingsUsername" name="username" value="{{ old('username', Auth::user()->username) }}" maxlength="50" pattern="[A-Za-z0-9_.]+" required></div>
+            <div class="settings-field full"><label for="settingsEmail">Email</label><input type="email" id="settingsEmail" name="email" value="{{ old('email', Auth::user()->email) }}" required></div>
+            <div class="settings-field full"><label for="settingsAddress">Address</label><textarea id="settingsAddress" name="address" maxlength="500">{{ old('address', Auth::user()->address) }}</textarea></div>
+            <div class="settings-field full"><label for="settingsPhone">Phone Number</label><input type="tel" id="settingsPhone" name="phone" value="{{ old('phone', Auth::user()->phone) }}" maxlength="25"></div>
+          </div>
+          <div class="settings-actions"><button type="button" class="btn btn-light" id="settingsCancel">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div>
+        </form>
+        <div class="settings-danger"><div><strong style="color:#a12d2d">Delete Account</strong><p>This permanently removes your account and related data.</p></div><button type="button" class="settings-delete" id="settingsDeleteOpen">Delete Account</button></div>
+      </section>
+    </div>
+    <div class="settings-backdrop" id="deleteBackdrop" aria-hidden="true" style="z-index:160">
+      <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" style="max-width:430px">
+        <div class="settings-heading"><h2 id="deleteTitle">Delete account?</h2><button type="button" class="settings-x" id="deleteClose">✕</button></div>
+        <p>This cannot be undone. Enter your current password to confirm.</p>
+        <form action="{{ route('settings.destroy') }}" method="POST" style="margin-top:14px">
+          @csrf @method('DELETE')
+          <div class="settings-field"><label for="deletePassword">Current password</label><input id="deletePassword" name="password" type="password" required autocomplete="current-password"></div>
+          <div class="settings-actions"><button type="button" class="btn btn-light" id="deleteCancel">Cancel</button><button type="submit" class="settings-delete">Yes, Delete Account</button></div>
+        </form>
+      </section>
+    </div>
+    @endauth
+
+
+    @auth
+    <div class="crop-backdrop" id="profileCropBackdrop" aria-hidden="true">
+      <section class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+        <h3 id="cropTitle">Adjust Profile Picture</h3>
+        <p>Drag gambar untuk ubah posisi, kemudian zoom ikut kesesuaian.</p>
+        <div class="crop-stage" id="profileCropStage">
+          <img id="profileCropImage" alt="Photo being cropped" draggable="false">
+        </div>
+        <label class="crop-zoom" for="profileCropZoom">Zoom
+          <input id="profileCropZoom" type="range" min="1" max="3" step="0.01" value="1">
+        </label>
+        <div class="crop-actions">
+          <button type="button" class="btn btn-light" id="profileCropCancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="profileCropSave">Use This Photo</button>
+        </div>
+      </section>
+    </div>
+    @endauth
+
     <main class="container">
         @if (session('success'))
             <div class="notice">{{ session('success') }}</div>
@@ -1124,7 +1404,7 @@
         <section class="screen hero" id="top">
             <div class="hero-card">
                 <div>
-                    <span class="eyebrow">WELCOME TO NEIGHBOURHOOD! 🌱</span>
+                    <span class="eyebrow">WELCOME TO K.I.T.A.! 🌱</span>
                     <h1>Better neighbourhoods start with us.</h1>
                     <p>
                         Discover local events, help your neighbours,
@@ -1135,7 +1415,7 @@
                         <a href="#community" class="btn btn-primary">Explore community event ↗</a>
 
                         @auth
-                            <a href="{{ route('events.create') }}" class="btn btn-light">Create an event +</a>
+                            <a href=#issues class="btn btn-light">Issues for today +</a>
                         @else
                             <a href="{{ route('register') }}" class="btn btn-light">Join the community +</a>
                         @endauth
@@ -1167,7 +1447,9 @@
                 <div class="stat-card">
                     <div class="stat-icon">📣</div>
                     <div>
-                        <div class="stat-number">4</div>
+                        <div class="stat-number">
+                            {{ \App\Models\Complaint::where('status', 'pending')->count() }}
+                        </div>
                         <div class="stat-label">Community issues</div>
                     </div>
                 </div>
@@ -1182,81 +1464,75 @@
             </div>
         </section>
 
-        {{-- SCREEN 2: Community events --}}
+        {{-- SCREEN 2: Community Events --}}
+        @php
+            $today = \Carbon\Carbon::today();
+            $yesterday = $today->copy()->subDay();
+            $tomorrow = $today->copy()->addDay();
+
+            $homeEvents = $visibleEvents
+                ->filter(function ($event) use ($yesterday, $tomorrow) {
+                    $date = $event->start_date ?? $event->event_date;
+
+                    return $date
+                        && \Carbon\Carbon::parse($date)->betweenIncluded(
+                            $yesterday->copy()->startOfDay(),
+                            $tomorrow->copy()->endOfDay()
+                        );
+                })
+                ->sortBy(fn ($event) => $event->start_date ?? $event->event_date);
+        @endphp
+
         <section class="screen" id="community">
             <div class="screen-head">
                 <div>
                     <h2>What's happening? 🌼</h2>
-                    <p>News and activities around your neighbourhood.</p>
+                    <p>Discover neighbourhood events from yesterday to tomorrow.</p>
                 </div>
 
+                <a href="{{ route('events.index') }}" class="text-link">
+                    View All Events →
+                </a>
             </div>
 
-            <div class="events-layout">
-            <div class="events-main">
-            <div class="chips-row">
-            <div class="chips" data-filter-group="events">
-                <button type="button" class="chip active" data-filter="all">All</button>
-                <button type="button" class="chip" data-filter="upcoming">Upcoming</button>
-                <button type="button" class="chip" data-filter="ongoing">Ongoing</button>
-                <button type="button" class="chip" data-filter="ended">Ended</button>
-                <button type="button" class="chip" data-filter="cancelled">Cancelled</button>
+            <div class="home-events-actions">
+                <span class="home-events-period">
+                    📅 {{ $yesterday->format('d M') }}
+                    — {{ $tomorrow->format('d M Y') }}
+                </span>
             </div>
 
-            @auth
-                <a href="{{ route('events.create') }}" class="btn btn-primary">+ Create event</a>
-            @else
-                <a href="{{ route('login') }}" class="btn btn-light">Log in to create</a>
-            @endauth
-            </div>
-
-            <div class="event-grid" id="eventGrid">
-                @forelse ($visibleEvents as $event)
+            <div class="event-grid">
+                @forelse ($homeEvents as $event)
                     @php
-                        $statusLabel = match ($event->current_status) {
-                            'upcoming' => 'UPCOMING',
-                            'ongoing' => 'ONGOING',
-                            'ended' => 'ENDED',
-                            'cancelled' => 'CANCELLED',
-                            'archived' => 'ARCHIVED',
-                            default => strtoupper($event->current_status),
-                        };
+                        $eventDate = \Carbon\Carbon::parse(
+                            $event->start_date ?? $event->event_date
+                        );
 
-                        $statusClass = match ($event->current_status) {
+                        $status = $event->current_status;
+
+                        $statusClass = match ($status) {
                             'ongoing' => 'tag-warning',
-                            'ended', 'archived' => 'tag-ended',
+                            'ended' => 'tag-ended',
                             'cancelled' => 'tag-cancelled',
                             default => '',
                         };
-
-                        $eventDate = $event->start_date ?? $event->event_date;
                     @endphp
 
-                    <article
-                        class="event-card {{ $event->current_status === 'cancelled' ? 'is-cancelled' : '' }}"
-                        data-status="{{ $event->current_status }}"
-                    >
+                    <article class="event-card {{ $status === 'cancelled' ? 'is-cancelled' : '' }}">
                         <div class="date-block">
-                            @if ($eventDate)
-                                <span class="day">{{ $eventDate->format('d') }}</span>
-                                <span class="month">{{ $eventDate->format('M') }}</span>
-                            @else
-                                <span class="tbd">🗓️</span>
-                            @endif
+                            <span class="day">{{ $eventDate->format('d') }}</span>
+                            <span class="month">{{ $eventDate->format('M') }}</span>
                         </div>
 
                         <div class="item-info">
-                            <span class="tag {{ $statusClass }}">{{ $statusLabel }}</span>
+                            <span class="tag {{ $statusClass }}">
+                                {{ strtoupper($status) }}
+                            </span>
 
                             <h3>{{ $event->title }}</h3>
 
-                            <p>
-                                @if ($eventDate)
-                                    {{ $eventDate->format('D, d M Y · g:i A') }}
-                                @else
-                                    Date and time to be announced
-                                @endif
-                            </p>
+                            <p>🕒 {{ $eventDate->format('D, d M Y · g:i A') }}</p>
 
                             @if ($event->location)
                                 <p>📍 {{ $event->location }}</p>
@@ -1266,7 +1542,7 @@
                                 <p class="desc">{{ $event->description }}</p>
                             @endif
 
-                            @if ($event->status === 'cancelled' && $event->cancellation_reason)
+                            @if ($status === 'cancelled' && $event->cancellation_reason)
                                 <div class="cancellation-notice">
                                     <strong>Cancellation reason:</strong>
                                     {{ $event->cancellation_reason }}
@@ -1275,49 +1551,40 @@
                         </div>
                     </article>
                 @empty
-                    <div class="empty-state">
-                        <p>No community activities yet.</p>
-                        <p>Check back later for updates from your neighbours. 🌱</p>
+                    <div class="home-events-empty">
+                        <span>🌱</span>
+                        <h3>No events around these dates</h3>
+                        <p>Explore all community events to see what's coming next.</p>
+                        <a href="{{ route('events.index') }}" class="btn btn-light">
+                            Explore All Events →
+                        </a>
                     </div>
                 @endforelse
-
-                <p class="empty-state" id="eventFilterEmpty" hidden>
-                    No events in this category right now.
-                </p>
-            </div>
-
-            </div>
-
-            <aside class="events-side">
-                @php
-                    $calendarEvents = $visibleEvents
-                        ->map(fn ($e) => [
-                            'date' => ($e->start_date ?? $e->event_date)?->format('Y-m-d'),
-                            'title' => $e->title,
-                        ])
-                        ->filter(fn ($e) => $e['date'])
-                        ->values();
-                @endphp
-
-                <div class="side-panel cal-panel" id="calendar">
-                    <div class="cal-top">
-                        <h3 class="cal-title"></h3>
-                        <div class="cal-nav">
-                            <button type="button" data-cal="prev" aria-label="Previous month">‹</button>
-                            <button type="button" data-cal="today" class="cal-today">Today</button>
-                            <button type="button" data-cal="next" aria-label="Next month">›</button>
-                        </div>
-                    </div>
-
-                    <div class="cal-grid"></div>
-
-                    <p class="cal-legend">Hover a highlighted date to see its events.</p>
-                </div>
-            </aside>
             </div>
         </section>
 
+
         {{-- SCREEN 3: Neighbourhood issues --}}
+        @php
+            $issueStatuses = [
+                'pending' => [
+                    'label' => 'Reported',
+                    'dot' => 'dot-reported',
+                    'icon' => '📣',
+                ],
+                'in_progress' => [
+                    'label' => 'In Progress',
+                    'dot' => 'dot-progress',
+                    'icon' => '🔧',
+                ],
+                'resolved' => [
+                    'label' => 'Resolved',
+                    'dot' => 'dot-resolved',
+                    'icon' => '✅',
+                ],
+            ];
+        @endphp
+
         <section class="screen" id="issues">
             <div class="screen-head">
                 <div>
@@ -1327,46 +1594,57 @@
             </div>
 
             <div class="issue-board">
-                <div class="issue-col">
-                    <div class="issue-col-head"><span class="dot dot-reported"></span> Reported</div>
+                @foreach ($issueStatuses as $status => $config)
+                    @php
+                        $latestIssue = \App\Models\Complaint::query()
+                            ->where('status', $status)
+                            ->latest()
+                            ->first();
+                    @endphp
 
-                    <article class="issue-card">
-                        <div class="big-icon">💧</div>
-                        <div>
-                            <h3>Water supply disruption</h3>
-                            <p>Utilities</p>
+                    <div class="issue-col">
+                        <div class="issue-col-head">
+                            <span class="dot {{ $config['dot'] }}"></span>
+                            {{ $config['label'] }}
                         </div>
-                    </article>
-                </div>
 
-                <div class="issue-col">
-                    <div class="issue-col-head"><span class="dot dot-progress"></span> In progress</div>
+                        <article class="issue-card">
+                            <div class="big-icon">
+                                {{ $config['icon'] }}
+                            </div>
 
-                    <article class="issue-card">
-                        <div class="big-icon">🛣️</div>
-                        <div>
-                            <h3>Pothole on main road</h3>
-                            <p>Road & infrastructure</p>
-                        </div>
-                    </article>
-                </div>
-
-                <div class="issue-col">
-                    <div class="issue-col-head"><span class="dot dot-resolved"></span> Resolved</div>
-
-                    <article class="issue-card">
-                        <div class="big-icon">💡</div>
-                        <div>
-                            <h3>Street light repaired</h3>
-                            <p>Public facilities</p>
-                        </div>
-                    </article>
-                </div>
+                            <div>
+                                @if ($latestIssue)
+                                    <h3>{{ $latestIssue->title }}</h3>
+                                    <p>
+                                        {{ $latestIssue->category ?? 'Community Issue' }}
+                                    </p>
+                                    <p>
+                                        {{ $latestIssue->created_at->diffForHumans() }}
+                                    </p>
+                                    @if (filled($latestIssue->admin_remarks))
+                                        <div class="issue-admin-update">
+                                            <strong>💬 Update from Admin</strong>
+                                            <p>{{ $latestIssue->admin_remarks }}</p>
+                                            <small>K.I.T.A. Administration</small>
+                                        </div>
+                                    @endif
+                                @else
+                                    <h3>No issues yet</h3>
+                                    <p>No issues under this status.</p>
+                                @endif
+                            </div>
+                        </article>
+                    </div>
+                @endforeach
             </div>
 
             <div class="issue-cta">
                 <p>Spotted something that needs fixing? Let your neighbours know.</p>
-                <a href="#issues" class="btn btn-primary">View all issues →</a>
+                <a href="{{ route('issues.index') }}"
+                class="btn btn-primary">
+                    View all issues →
+                </a>
             </div>
         </section>
 
@@ -1453,8 +1731,34 @@
                                     Free
                                 @endif
                             </span>
+                            
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
 
-                            <a href="{{ route('community.index') }}" class="small-btn">View item</a>
+                                <a href="{{ route('community.index') }}"
+                                class="small-btn">
+                                    View item
+                                </a>
+
+                                @auth
+                                    @if ($item->user_id !== auth()->id())
+                                        <form action="{{ route('messages.start-item', $item->id) }}"
+                                            method="POST">
+                                            @csrf
+
+                                            <button type="submit"
+                                                    class="small-btn"
+                                                    style="border:none; cursor:pointer;">
+                                                💬 Chat Owner
+                                            </button>
+                                        </form>
+                                    @endif
+                                @else
+                                    <a href="{{ route('login') }}"
+                                    class="small-btn">
+                                        💬 Chat Owner
+                                    </a>
+                                @endauth
+                            </div>
                         </div>
                     </article>
                 @empty
@@ -1478,7 +1782,7 @@
 
     <footer>
         <div class="container">
-            Neighbourhood · Made for neighbours, by neighbours 🌿
+            K.I.T.A. · Made for neighbours, by neighbours 🧡
         </div>
     </footer>
 
@@ -1487,7 +1791,7 @@
         <a href="#top"><span class="ic">🏠</span>Home</a>
         <a href="#community"><span class="ic">📅</span>Events</a>
         <a href="#issues"><span class="ic">📣</span>Issues</a>
-        <a href="#marketplace"><span class="ic">📦</span>Items</a>
+        <a href="#marketplace"><span class="ic">📦</span>Marketplace</a>
     </nav>
 
     <script>
@@ -1518,97 +1822,6 @@
             });
         }
 
-        // Event calendar: month navigation + hover list of event titles
-        (function () {
-            var root = document.getElementById('calendar');
-            if (!root) return;
-
-            var calEvents = {{ \Illuminate\Support\Js::from($calendarEvents) }};
-            var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                          'August', 'September', 'October', 'November', 'December'];
-            var grid = root.querySelector('.cal-grid');
-            var title = root.querySelector('.cal-title');
-
-            var byDate = {};
-            calEvents.forEach(function (e) {
-                (byDate[e.date] = byDate[e.date] || []).push(e.title);
-            });
-
-            var now = new Date();
-            var view = new Date(now.getFullYear(), now.getMonth(), 1);
-
-            function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
-            function render() {
-                var y = view.getFullYear();
-                var m = view.getMonth();
-                title.textContent = months[m] + ' ' + y;
-                grid.innerHTML = '';
-
-                ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(function (d) {
-                    var h = document.createElement('span');
-                    h.className = 'cal-head';
-                    h.textContent = d;
-                    grid.appendChild(h);
-                });
-
-                var lead = (view.getDay() + 6) % 7;
-                for (var i = 0; i < lead; i++) grid.appendChild(document.createElement('span'));
-
-                var days = new Date(y, m + 1, 0).getDate();
-                for (var d = 1; d <= days; d++) {
-                    var key = y + '-' + pad(m + 1) + '-' + pad(d);
-                    var titles = byDate[key];
-                    var isToday = d === now.getDate() && m === now.getMonth() && y === now.getFullYear();
-                    var cell = document.createElement('div');
-                    cell.className = 'cal-cell';
-
-                    if (titles) {
-                        var btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'cal-day has-event' + (isToday ? ' today' : '');
-                        btn.textContent = d;
-                        btn.setAttribute('aria-label', d + ' ' + months[m] + ': ' + titles.join(', '));
-
-                        var tip = document.createElement('div');
-                        tip.className = 'cal-tip';
-                        tip.setAttribute('role', 'tooltip');
-                        titles.forEach(function (t) {
-                            var line = document.createElement('div');
-                            line.textContent = t;
-                            tip.appendChild(line);
-                        });
-
-                        var col = (lead + d - 1) % 7;
-                        if (col <= 1) tip.classList.add('align-left');
-                        else if (col >= 5) tip.classList.add('align-right');
-
-                        cell.appendChild(btn);
-                        cell.appendChild(tip);
-                    } else {
-                        var span = document.createElement('span');
-                        span.className = 'cal-day' + (isToday ? ' today' : '');
-                        span.textContent = d;
-                        cell.appendChild(span);
-                    }
-
-                    grid.appendChild(cell);
-                }
-            }
-
-            root.addEventListener('click', function (e) {
-                var b = e.target.closest('[data-cal]');
-                if (!b) return;
-                var act = b.dataset.cal;
-                if (act === 'prev') view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
-                if (act === 'next') view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
-                if (act === 'today') view = new Date(now.getFullYear(), now.getMonth(), 1);
-                render();
-            });
-
-            render();
-        })();
-
         // Side drawer (logged-in user menu)
         (function () {
             var openBtn = document.getElementById('drawerOpen');
@@ -1630,6 +1843,149 @@
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) setOpen(false);
             });
+        })();
+
+
+        // Settings modal inside the homepage
+        (function () {
+            const opener = document.getElementById('settingsOpen');
+            const backdrop = document.getElementById('settingsBackdrop');
+            if (!opener || !backdrop) return;
+            const del = document.getElementById('deleteBackdrop');
+            let previousFocus = null;
+            function show(node) { node.classList.add('is-open'); node.setAttribute('aria-hidden','false'); document.body.classList.add('settings-open'); (node.querySelector('input,button') || node).focus(); }
+            function hide(node) { node.classList.remove('is-open'); node.setAttribute('aria-hidden','true'); if (!backdrop.classList.contains('is-open') && !del.classList.contains('is-open')) document.body.classList.remove('settings-open'); }
+            function openSettings(e) { if(e) e.preventDefault(); previousFocus=document.activeElement; document.body.classList.remove('drawer-open'); const drawer=document.getElementById('userDrawer'); if(drawer) drawer.setAttribute('aria-hidden','true'); const trigger=document.getElementById('drawerOpen'); if(trigger) trigger.setAttribute('aria-expanded','false'); show(backdrop); }
+            function closeSettings() { hide(backdrop); if(previousFocus && previousFocus.isConnected) previousFocus.focus(); }
+            opener.addEventListener('click',openSettings);
+            document.getElementById('settingsClose').addEventListener('click',closeSettings);
+            document.getElementById('settingsCancel').addEventListener('click',closeSettings);
+            backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeSettings();});
+            document.getElementById('settingsDeleteOpen').addEventListener('click',()=>{hide(backdrop);show(del);});
+            function closeDelete(){hide(del);show(backdrop);}
+            document.getElementById('deleteClose').addEventListener('click',closeDelete);
+            document.getElementById('deleteCancel').addEventListener('click',closeDelete);
+            del.addEventListener('click',e=>{if(e.target===del)closeDelete();});
+            document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(del.classList.contains('is-open'))closeDelete();else if(backdrop.classList.contains('is-open'))closeSettings();}});
+            // Let users drag and zoom before submitting their profile picture.
+            (function () {
+                const input = document.getElementById('settingsPhoto');
+                const popup = document.getElementById('profileCropBackdrop');
+                const stage = document.getElementById('profileCropStage');
+                const photo = document.getElementById('profileCropImage');
+                const zoom = document.getElementById('profileCropZoom');
+                const save = document.getElementById('profileCropSave');
+                const cancel = document.getElementById('profileCropCancel');
+                const form = document.getElementById('settingsForm');
+                let sourceUrl = null, baseScale = 1, scale = 1, x = 0, y = 0;
+                let start = null, originalFile = null, confirmed = true;
+                function stageSize() { return stage.getBoundingClientRect().width; }
+                function constrain() {
+                    const size = stageSize();
+                    const halfX = Math.max(0, (photo.naturalWidth * scale - size) / 2);
+                    const halfY = Math.max(0, (photo.naturalHeight * scale - size) / 2);
+                    x = Math.max(-halfX, Math.min(halfX, x));
+                    y = Math.max(-halfY, Math.min(halfY, y));
+                }
+                function render() {
+                    constrain();
+                    photo.style.width = photo.naturalWidth + 'px';
+                    photo.style.height = photo.naturalHeight + 'px';
+                    photo.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`;
+                }
+                function close(keep) {
+                    popup.classList.remove('is-open');
+                    popup.setAttribute('aria-hidden', 'true');
+                    if (!keep) { input.value = ''; confirmed = true; }
+                    if (sourceUrl) { URL.revokeObjectURL(sourceUrl); sourceUrl = null; }
+                    start = null;
+                }
+                input.addEventListener('change', function () {
+                    const file = input.files[0];
+                    if (!file) return;
+                    if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+                        alert('Please choose a JPG, PNG or WEBP image under 2MB.');
+                        input.value = '';
+                        return;
+                    }
+                    originalFile = file;
+                    confirmed = false;
+                    if (sourceUrl) URL.revokeObjectURL(sourceUrl);
+                    sourceUrl = URL.createObjectURL(file);
+                    photo.onload = () => {
+                        popup.classList.add('is-open');
+                        popup.setAttribute('aria-hidden','false');
+                        zoom.value = '1';
+                        x = 0; y = 0;
+                        baseScale = Math.max(stageSize()/photo.naturalWidth, stageSize()/photo.naturalHeight);
+                        scale = baseScale;
+                        render();
+                        zoom.focus();
+                    };
+                    photo.onerror = () => { alert('Unable to read this image.'); close(false); };
+                    photo.src = sourceUrl;
+                });
+                zoom.addEventListener('input', () => {
+                    scale = baseScale * Number(zoom.value);
+                    render();
+                });
+                stage.addEventListener('pointerdown', e => {
+                    if (!popup.classList.contains('is-open')) return;
+                    start = { id:e.pointerId, px:e.clientX, py:e.clientY, x, y };
+                    stage.setPointerCapture(e.pointerId);
+                });
+                stage.addEventListener('pointermove', e => {
+                    if (!start || e.pointerId !== start.id) return;
+                    x = start.x + e.clientX - start.px;
+                    y = start.y + e.clientY - start.py;
+                    render();
+                });
+                ['pointerup','pointercancel','lostpointercapture'].forEach(name => stage.addEventListener(name, () => { start = null; }));
+                cancel.addEventListener('click', () => close(false));
+                save.addEventListener('click', () => {
+                    if (!photo.complete || !photo.naturalWidth) return;
+                    save.disabled = true;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = canvas.height = 512;
+                    const ctx = canvas.getContext('2d');
+                    const factor = 512 / stageSize();
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0,0,512,512);
+                    const w = photo.naturalWidth * scale * factor;
+                    const h = photo.naturalHeight * scale * factor;
+                    ctx.drawImage(photo, 256 + x*factor - w/2, 256 + y*factor - h/2, w, h);
+                    canvas.toBlob(blob => {
+                        save.disabled = false;
+                        if (!blob) { alert('Unable to crop this image.'); return; }
+                        const cropped = new File([blob], 'profile-photo.jpg', {type:'image/jpeg'});
+                        const transfer = new DataTransfer();
+                        transfer.items.add(cropped);
+                        input.files = transfer.files;
+                        confirmed = true;
+                        let preview = document.getElementById('settingsPreview');
+                        if (preview.tagName !== 'IMG') {
+                            const img = document.createElement('img');
+                            img.id = 'settingsPreview';
+                            img.className = 'settings-photo-preview';
+                            img.alt = 'Profile preview';
+                            preview.replaceWith(img);
+                            preview = img;
+                        }
+                        preview.src = URL.createObjectURL(blob);
+                        preview.onload = () => URL.revokeObjectURL(preview.src);
+                        close(true);
+                    }, 'image/jpeg', 0.9);
+                });
+                form.addEventListener('submit', e => {
+                    if (!confirmed) { e.preventDefault(); alert('Please finish adjusting your profile photo first.'); }
+                });
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'Escape' && popup.classList.contains('is-open')) { e.stopImmediatePropagation(); close(false); }
+                }, true);
+            })();
+            @if($errors->any() && old('_settings_form'))
+              openSettings();
+            @endif
         })();
 
         setupFilter('events', 'eventGrid', '.event-card', 'status', 'eventFilterEmpty');

@@ -1,0 +1,7 @@
+@extends('admin.layout')
+@section('title','Dashboard')
+@section('content')
+<h1>Community Overview 🌿</h1><p class="sub">Monitor all complaints submitted to K.I.T.A.</p>
+<div class="stats">@foreach(['total'=>'Total Complaints','pending'=>'Pending','in_progress'=>'In Progress','resolved'=>'Resolved','rejected'=>'Rejected'] as $key=>$label)<div class="stat"><small>{{ $label }}</small><strong>{{ $counts[$key] }}</strong></div>@endforeach</div>
+<div class="panel"><div class="actions" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">All Complaints</h2><a class="btn" href="{{ route('admin.requests') }}">Manage Requests →</a></div><div class="scroll"><table><thead><tr><th>ID</th><th>Complaint</th><th>Reported by</th><th>Category</th><th>Status</th><th>Submitted</th></tr></thead><tbody>@forelse($complaints as $complaint)<tr><td>#{{ $complaint->id }}</td><td><strong>{{ $complaint->title }}</strong><br><span class="muted">{{ $complaint->location }}</span></td><td>{{ $complaint->user?->name ?? 'Unknown' }}</td><td>{{ ucwords(str_replace('_',' ',$complaint->category)) }}</td><td><span class="badge {{ $complaint->status }}">{{ ucwords(str_replace('_',' ',$complaint->status)) }}</span></td><td>{{ $complaint->created_at?->format('d M Y') }}</td></tr>@empty<tr><td colspan="6">No complaints yet.</td></tr>@endforelse</tbody></table></div><div class="pagination">{{ $complaints->links() }}</div></div>
+@endsection

@@ -7,21 +7,40 @@ use App\Models\CommunityItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class CommunityEventController extends Controller
 {
-    // Paparkan event di homepage
-    
+    // =========================================
+    // HOMEPAGE
+    // Events semalam, hari ini dan esok sahaja
+    // =========================================
+
     public function index(): View
     {
-        $events = CommunityEvent::where(function ($query) {
-            $query->where('status', 'cancelled')
-                ->orWhereNull('end_date')
-                ->orWhere('end_date', '>=', now()->subDays(7));
-        })
-            ->orderBy('start_date')
+        $yesterday = Carbon::yesterday()->startOfDay();
+        $tomorrow = Carbon::tomorrow()->endOfDay();
+
+        $events = CommunityEvent::query()
+            ->where(function ($query) use ($yesterday, $tomorrow) {
+
+                // Event yang bermula dalam tempoh ini
+                // ATAU event yang sedang berlangsung
+                // merentasi tempoh ini.
+                $query->whereBetween('start_date', [
+                    $yesterday,
+                    $tomorrow
+                ])
+                ->orWhere(function ($q) use ($yesterday, $tomorrow) {
+                    $q->where('start_date', '<=', $tomorrow)
+                      ->where('end_date', '>=', $yesterday);
+                });
+
+            })
+            ->orderBy('start_date', 'asc')
             ->get();
 
+        // Marketplace - kekalkan fungsi asal
         $items = CommunityItem::with('user')
             ->where('status', 'available')
             ->latest()
@@ -31,13 +50,37 @@ class CommunityEventController extends Controller
         return view('welcome', compact('events', 'items'));
     }
 
-    // Paparkan borang cipta event
+    // =========================================
+    // ALL EVENTS
+    // Semua event daripada semua pengguna
+    // =========================================
+
+    public function allEvents(): View
+    {
+        $events = CommunityEvent::query()
+            ->orderBy('start_date', 'asc')
+            ->get()
+            ->filter(function ($event) {
+                return $event->current_status !== 'archived';
+            })
+            ->values();
+
+        return view('events.all', compact('events'));
+    }
+
+    // =========================================
+    // CREATE EVENT
+    // =========================================
+
     public function create(): View
     {
         return view('events.create');
     }
 
-    // Simpan event baharu
+    // =========================================
+    // STORE EVENT
+    // =========================================
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -52,14 +95,20 @@ class CommunityEventController extends Controller
         $validated['event_date'] = $validated['start_date'];
         $validated['status'] = 'upcoming';
 
-        $request->user()->communityEvents()->create($validated);
+        $request->user()
+            ->communityEvents()
+            ->create($validated);
 
         return redirect()
             ->route('home')
             ->with('success', 'Aktiviti berjaya ditambah!');
     }
 
-    // Paparkan event milik pengguna yang sedang login
+    // =========================================
+    // MY EVENTS
+    // Event milik pengguna yang login sahaja
+    // =========================================
+
     public function myEvents(Request $request): View
     {
         $events = $request->user()
@@ -70,11 +119,15 @@ class CommunityEventController extends Controller
         return view('events.index', compact('events'));
     }
 
-    // Paparkan borang edit event
+    // =========================================
+    // EDIT EVENT
+    // =========================================
+
     public function edit(
         Request $request,
         CommunityEvent $event
     ): View {
+
         abort_unless(
             (int) $event->user_id === (int) $request->user()->id,
             403
@@ -89,11 +142,15 @@ class CommunityEventController extends Controller
         return view('events.edit', compact('event'));
     }
 
-    // Simpan perubahan event
+    // =========================================
+    // UPDATE EVENT
+    // =========================================
+
     public function update(
         Request $request,
         CommunityEvent $event
     ): RedirectResponse {
+
         abort_unless(
             (int) $event->user_id === (int) $request->user()->id,
             403
@@ -123,11 +180,16 @@ class CommunityEventController extends Controller
             ->with('success', 'Aktiviti berjaya dikemas kini!');
     }
 
-    // Batalkan event dengan sebab wajib
+    // =========================================
+    // CANCEL EVENT
+    // Sebab pembatalan wajib
+    // =========================================
+
     public function cancel(
         Request $request,
         CommunityEvent $event
     ): RedirectResponse {
+
         abort_unless(
             (int) $event->user_id === (int) $request->user()->id,
             403

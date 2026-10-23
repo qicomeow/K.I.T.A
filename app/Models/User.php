@@ -11,7 +11,7 @@ use App\Models\CommunityItem;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name','full_name','username','email','address','phone','profile_photo','password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
